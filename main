@@ -1,0 +1,28 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=4
+#PBS -l vmem=16gb
+#PBS -l walltime=1:00:00
+
+module load singularity 2> /dev/null
+
+#generate DM.txt
+true > dm.txt
+echo "Index   Filename    SEX GROUP_ID    AGE CDR MMSE" >> dm.txt
+
+count=0
+for t1 in $(jq -r .t1[] config.json); do
+    counter=$((counter+1))
+    echo "$counter   $t1 1   0   76.38   0   29" >> dm.txt
+done
+
+exit
+
+time singularity run docker://brainlife/socr ./kw.sh
+
+if [ ! -s some.nii.gz ];
+then
+	echo "missing input iamge"
+	exit 1
+fi
+
+
