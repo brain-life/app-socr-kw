@@ -1,7 +1,0 @@
-Index   Filename    SEX GROUP_ID    AGE CDR MMSE
-1   /mnt/scratch/testdata/108323/anat/t1.nii.gz 1   0   76.38   0   29
-2   /mnt/scratch/testdata/100206/anat_5967bffa9b45c212bbec8957/100206_t1.nii.gz 1   0   76.38   0   29
-3   /mnt/scratch/testdata/100307/anat_598a28ec19ee5b6f80cba0b7/100307_t1.nii.gz 1   0   76.38   0   29
-4   /mnt/scratch/testdata/100408/anat_598a2aa44258600aa3128fcf/100408_t1.nii.gz 1   0   76.38   0   29
-5   /mnt/scratch/testdata/100610/anat_5941a37f803e87394b473a10/100610_t1.nii.gz 1   0   76.38   0   29
-6   /mnt/scratch/testdata/101006/anat_5989e1da4c4089658cc45a21/101006_t1.nii.gz 1   0   76.38   0   29
