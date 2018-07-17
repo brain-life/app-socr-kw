@@ -3,26 +3,48 @@
 #PBS -l vmem=16gb
 #PBS -l walltime=1:00:00
 
-module load singularity 2> /dev/null
-
 #generate DM.txt
 true > dm.txt
-echo "Index   Filename    SEX GROUP_ID    AGE CDR MMSE" >> dm.txt
+regressors=$(jq -r .regressors config.json | tr ',' "\n")
+#regressors=(${regressors//,/ }) #split by comma
+#echo $regressors
+#header
+echo -n "Index Filename " >> dm.txt
+for reg in $regressors; do
+    echo -n "$reg " >> dm.txt
+done
+echo >> dm.txt
 
-count=0
+#rows
+counter=0
 for t1 in $(jq -r .t1[] config.json); do
+    echo -n "$counter $t1" >> dm.txt
+    for reg in $regressors; do
+        value=$(jq -r ._inputs[$counter].meta.$reg config.json)
+        echo -n " $value" >> dm.txt
+    done
+    echo "" >> dm.txt
     counter=$((counter+1))
-    echo "$counter   $t1 1   0   76.38   0   29" >> dm.txt
 done
 
-exit
+#time singularity run docker://brainlife/socr:1.0 ./kw.sh
+time singularity exec docker://brainlife/socr:1.0 java -cp /socr/jars/SOCR_core.jar:/socr/jars/SOCR_plugin.jar \
+    edu.ucla.stat.SOCR.analyses.command.volume.VolumeMultipleRegression \
+    -dm dm.txt -h -regressors $regressors -dim 220 220 220 -intercept interceptConstant
 
-time singularity run docker://brainlife/socr ./kw.sh
-
-if [ ! -s some.nii.gz ];
-then
-	echo "missing input iamge"
+if [ ! -f interceptConstant_Intercept_Beta.img ]; then
+	echo "missing interceptConstant_Intercept_Beta.img"
 	exit 1
 fi
-
-
+if [ ! -f interceptConstant_Intercept_Pvalue.img ]; then
+	echo "missing interceptConstant_Intercept_Pvalue.img"
+	exit 1
+fi
+if [ ! -f interceptConstant_Intercept_RPartCorr.img ]; then
+	echo "missing interceptConstant_Intercept_RPartCorr.img"
+	exit 1
+fi
+if [ ! -f interceptConstant_Intercept_TStat.img ]; then
+	echo "missing interceptConstant_Intercept_TStat.img"
+	exit 1
+fi
