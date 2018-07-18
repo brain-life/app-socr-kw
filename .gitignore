@@ -3,3 +3,4 @@ output
 config.json
 dm.txt
 *.img
+convert.sh

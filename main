@@ -17,8 +17,14 @@ echo >> dm.txt
 
 #rows
 counter=0
+true > convert.sh
+chmod +x convert.sh
 for t1 in $(jq -r .t1[] config.json); do
-    echo -n "$counter $t1" >> dm.txt
+    #convert nii.gz to analyze
+    #echo "echo converting $t1 to analyze" >> convert.sh
+    echo "fslchfiletype ANALYZE $t1 image$counter.img" >> convert.sh
+    
+    echo -n "$counter image$counter.img" >> dm.txt
     for reg in $regressors; do
         value=$(jq -r ._inputs[$counter].meta.$reg config.json)
         echo -n " $value" >> dm.txt
@@ -27,24 +33,30 @@ for t1 in $(jq -r .t1[] config.json); do
     counter=$((counter+1))
 done
 
+#convert t1 to analyze
+echo "converting t1 to analyze"
+time singularity exec docker://brainlife/fsl:5.0.9 ./convert.sh
+
 #time singularity run docker://brainlife/socr:1.0 ./kw.sh
 time singularity exec docker://brainlife/socr:1.0 java -cp /socr/jars/SOCR_core.jar:/socr/jars/SOCR_plugin.jar \
     edu.ucla.stat.SOCR.analyses.command.volume.VolumeMultipleRegression \
     -dm dm.txt -h -regressors $regressors -dim 220 220 220 -intercept interceptConstant
+if [ ! $? -eq 0 ]; then
+    echo "failed to run VolumeMultipleRegression"
+    exit 1
+fi
 
-if [ ! -f interceptConstant_Intercept_Beta.img ]; then
-	echo "missing interceptConstant_Intercept_Beta.img"
-	exit 1
-fi
-if [ ! -f interceptConstant_Intercept_Pvalue.img ]; then
-	echo "missing interceptConstant_Intercept_Pvalue.img"
-	exit 1
-fi
-if [ ! -f interceptConstant_Intercept_RPartCorr.img ]; then
-	echo "missing interceptConstant_Intercept_RPartCorr.img"
-	exit 1
-fi
-if [ ! -f interceptConstant_Intercept_TStat.img ]; then
-	echo "missing interceptConstant_Intercept_TStat.img"
-	exit 1
-fi
+echo "converting output to nifti"
+cp image0.hdr interceptConstant_Intercept_Pvalue.hdr
+cp image0.hdr interceptConstant_Intercept_Beta.hdr
+cp image0.hdr interceptConstant_Intercept_RPartCorr.hdr
+cp image0.hdr interceptConstant_Intercept_TStat.hdr
+
+true > convert.sh
+echo "fslchfiletype NIFTI_GZ interceptConstant_Intercept_Pvalue.hdr" >> convert.sh
+echo "fslchfiletype NIFTI_GZ interceptConstant_Intercept_Beta.hdr" >> convert.sh
+echo "fslchfiletype NIFTI_GZ interceptConstant_Intercept_RPartCorr.hdr" >> convert.sh
+echo "fslchfiletype NIFTI_GZ interceptConstant_Intercept_TStat.hdr" >> convert.sh
+time singularity exec docker://brainlife/fsl:5.0.9 ./convert.sh
+
+echo "all done"
